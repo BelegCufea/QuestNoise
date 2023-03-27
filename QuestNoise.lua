@@ -1,8 +1,17 @@
--- QuestNoise v3.0.0
--- 3.0.0
+-- QuestNoise v4.0
+-- 4.0.1
+-- * Migrated to libSharedMedia
+-- 4.0.0
 -- * update to Dragonflight
 -- * Bumped TOC to 100007
-
+-- v3.3
+-- * changed TOC version from 90200 to 90002
+-- v3.2
+-- * forgot to update version in TOC
+-- v3.1
+-- * further update for Shadowlands, fixed events firing in different orders
+-- v3.0
+-- * update for Shadowlands
 -- v2.1
 -- * uses Blizzard's SOUNDKIT ids
 -- v2.0.4
@@ -167,7 +176,7 @@ local options = {
           width = "double",
           name = "Pick Sound",
           desc = "Pick Sound",
-          values = {"ReadyCheck","Sound\\Creature\\Peon\\PeonBuildingComplete1.ogg"}
+          values = {"ReadyCheck","+558132"}
         },
         ]]
         questCompleteSoundLSM = {
@@ -264,8 +273,8 @@ end
 
 
 -- events and main event handler (simply forwards to a member function of the same name)
---f:RegisterEvent("QUEST_LOG_UPDATE")
---f:RegisterEvent("UNIT_QUEST_LOG_CHANGED")
+f:RegisterEvent("UNIT_QUEST_LOG_CHANGED")
+f:RegisterEvent("QUEST_LOG_UPDATE")
 f:RegisterEvent("UI_INFO_MESSAGE")
 f:SetScript("OnEvent", function(this, event, ...)
   this[event](this, ...)
@@ -284,79 +293,68 @@ local QuestNoise_ObjectivesBuffer = {}
 -- to previously-saved objectives in QUEST_LOG_UPDATE since it will only check if there has been recent info messages displayed,
 -- and it only checks for exact string matches of the displayed message.
 function f:UI_INFO_MESSAGE(messageType, message)
-	local event = nil
 	msgName = GetGameMessageInfo(messageType)
 	--print(messageType.." "..msgName.." "..message)
 
-	if msgName and msgName:sub(1, 10) == "ERR_QUEST_" then
-		if message == "Objective Complete." then
-			event = QUESTNOISE_QUESTCOMPLETE
-		else
-			local qname, qcount = message:match'(.*): (.*)'
-			if qcount then
-				local qcurrent, qall = qcount:match'(.*)/(.*)'
-				if qcurrent and qall then
-					if qcurrent == qall then
-						event = QUESTNOISE_OBJECTIVECOMPLETE
-					else
-						event = QUESTNOISE_OBJECTIVEPROGRESS
-					end
-				end
-			end
-		end
-	end
+ if msgName and msgName:sub(1, 10) == "ERR_QUEST_" and message ~= "Objective Complete." then
+    local event = self:EvalMsg(message)
+    if event then
+      --print("UI_INFO_MESSAGE eval'd sound")
+      self:MakeSound(event)
+    else
+      --print("UI_INFO_MESSAGE could not eval sound, adding to buffer")
+      QuestNoise_ObjectivesBuffer[#QuestNoise_ObjectivesBuffer + 1] = message
+    end
+  end
 
-	if event then
-		self:MakeSound(event)
-	end
 end
 
 -- old info for QUEST_LOG_UPDATE
   -- This is the only quest-related function that I can find that is guaranteed called AFTER any objective change are reported via
   -- GetNumQuestLeaderBoards. UNIT_QUEST_LOG_CHANGED seemingly isn't called on item-based objectives, and QUEST_WATCH_UPDATE is called
   -- before the objective changes are reported via GetQuestLogLeaderBoard.
--- This is the only quest-related function that I can find that is guaranteed called AFTER any objective change are reported via
--- GetNumQuestLeaderBoards. UNIT_QUEST_LOG_CHANGED seemingly isn't called on item-based objectives, and QUEST_WATCH_UPDATE is called
--- before the objective changes are reported via GetNumQuestLeaderBoards. This function simply iterates through the list of queued
--- UI messages (if any) and calls the EvalMsg function. This function should have a fairly low overhead cost since it does nothing
--- if there are no saved messages in the queue. Afterwards, it plays a sound corresponding to the highest completion status.
-function f:QUEST_LOG_UPDATE()
-  local text = QuestNoise_ObjectivesBuffer[1]
-  local event = nil
-  local tevent = nil
-  while text do
-	print(text)
-    tevent = self:EvalMsg(tremove(QuestNoise_ObjectivesBuffer, 1))
-	print(tevent)
-    -- if this event is higher than saved event, change saved event
-    -- if saved event is nil and this event isn't, changed saved event
-    if (tevent and event and tevent > event) or (tevent and not event) then event = tevent end
-    text = QuestNoise_ObjectivesBuffer[1]
-  end
-  print(event)
-
-  -- finally, play sound if we have one to play
-  if event then
-    self:MakeSound(event)
-  end
-end
 
 -- UNIT_QUEST_LOG_CHANGED now works for item-based objectives and is called after objective changes are reported via
 -- GetQuestLogLeaderBoard. This function simply iterates through the list of queued UI messages (if any) and calls
 -- the EvalMsg function. This function should have a fairly low overhead cost since it does nothing if there are no
 -- saved messages in the queue. Afterwards, it plays a sound corresponding to the highest completion status.
+
+--Shadowlands note
+-- UI_INFO_MESSAGE and QUEST events all fire in an unpredictable order (but at the same timestamp, according to /eventtrace)
+
+-- UI_INFO_MESSAGE will try to handle the message, and if it fails, then it will store it for handling in the QUEST events
+
 function f:UNIT_QUEST_LOG_CHANGED(unitID)
   if unitID ~= "player" then return end
 
-  local text = QuestNoise_ObjectivesBuffer[1]
-  local event = nil
+   --print("UNIT_QUEST_LOG_CHANGED")
+  self:HandleBuffer()
+end
+
+function f:QUEST_LOG_UPDATE()
+  --print("QUEST_LOG_UPDATE")
+  self:HandleBuffer()
+end
+
+function f:HandleBuffer()
+  local text = QuestNoise_ObjectivesBuffer[#QuestNoise_ObjectivesBuffer]
+   local event = nil
   local tevent = nil
   while text do
-    tevent = self:EvalMsg(tremove(QuestNoise_ObjectivesBuffer, 1))
+    --print("processing: " .. text)
+    QuestNoise_ObjectivesBuffer[#QuestNoise_ObjectivesBuffer] = nil
+    tevent = self:EvalMsg(text)
+
+    --if tevent then
+    --  print("tevent: " .. tevent)
+    --else
+    --  print("no tevent, could not handle message")
+    --end
+
     -- if this event is higher than saved event, change saved event
     -- if saved event is nil and this event isn't, changed saved event
     if (tevent and event and tevent > event) or (tevent and not event) then event = tevent end
-    text = QuestNoise_ObjectivesBuffer[1]
+    text = QuestNoise_ObjectivesBuffer[#QuestNoise_ObjectivesBuffer]
   end
 
   -- finally, play sound if we have one to play
@@ -364,6 +362,7 @@ function f:UNIT_QUEST_LOG_CHANGED(unitID)
     self:MakeSound(event)
   end
 end
+
 
 -- This function takes a message (that originated from UI_INFO_MESSAGE) and scans all quests for a matching objective string.
 -- If it finds one, it determines the current status of quest (quest completed, objective completed, objective progress)
@@ -395,21 +394,26 @@ function f:EvalMsg(arg)
   local event = nil
 
   -- begin looping through every quest
-  local numQuests = GetNumQuestLogEntries()
+  local numQuests = C_QuestLog.GetNumQuestLogEntries()
   for qindex = 1, numQuests do
-    -- title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory
-    local title, _, _, isHeader, _, isComplete =  GetQuestLogTitle(qindex)
+    local qinfo = C_QuestLog.GetInfo(qindex)
+    local title, questid, isHeader = qinfo.title, qinfo.questID, qinfo.isHeader
+    local isComplete = C_QuestLog.IsComplete(questid)
 
-    -- GetQuestLogTitle returns EVERY line in the Quest Log, including the zone headers, and we don't care about them
+    -- C_QuestLog.GetInfo returns EVERY line in the Quest Log, including the zone headers, and we don't care about them
     if (not isHeader) then
 
       -- begin checking each of this quest's objectives
-      local numObjectives = GetNumQuestLeaderBoards(qindex) or 0
-      for obj = 1, numObjectives do
-        local text, _, finished = GetQuestLogLeaderBoard(obj, qindex) -- text, type, finished
+      local oinfo = C_QuestLog.GetQuestObjectives(questid)
+      for i, q in pairs(oinfo) do
+
+        local text, finished = q.text, q.finished
+        --print("qtext: " .. text)
 
         -- check if this objective matches what was displayed
         if (text and (text == msg or text == msg2 or text == msg3)) then
+
+          --print("match!")
 
           -- quest complete has higher priority
           if (isComplete) then
