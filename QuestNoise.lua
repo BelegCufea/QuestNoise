@@ -1,7 +1,7 @@
 -- QuestNoise v3.0.0
 -- 3.0.0
 -- * update to Dragonflight
--- * Bumped TOC to 100700
+-- * Bumped TOC to 100007
 
 -- v2.1
 -- * uses Blizzard's SOUNDKIT ids
@@ -47,6 +47,16 @@ QuestNoise = LibStub("AceAddon-3.0"):NewAddon("QuestNoise", "AceConsole-3.0")
 QuestNoise.version = GetAddOnMetadata("QuestNoise", "Version")
 QuestNoise.date = "2017-08-30"
 
+-- libSharedMedia integration
+local LSM = LibStub("LibSharedMedia-3.0")
+local media = {
+  -- Sounds (Blizzard)
+  { type = "SOUND", name = "AuctionWindowOpen", filePath = 567482 },
+  { type = "SOUND", name = "AuctionWindowClose", filePath = 567499 },
+  { type = "SOUND", name = "ReadyCheck", filePath = 567409 },
+  { type = "SOUND", name = "Peon", filePath = 558132 },
+}
+
 -- our frame
 QuestNoiseFrame = CreateFrame("Frame", "QuestNoise", UIParent)
 local f = QuestNoiseFrame
@@ -83,6 +93,7 @@ local options = {
           name = "Enabled",
           desc = "Enables/disables playing a sound when objective progress has been made",
         },
+        --[[
         objProgressSound = {
           type = "select",
           style = "dropdown",
@@ -91,6 +102,17 @@ local options = {
           name = "Pick Sound",
           desc = "Pick Sound",
           values = {"AuctionWindowOpen","AuctionWindowClose"}
+        },
+        ]]
+        objProgressSoundLSM = {
+          type = "select",
+          style = "dropdown",
+          order = 5,
+          width = "double",
+          name = "Pick Sound",
+          desc = "Pick Sound",
+          dialogControl = "LSM30_Sound",
+          values = AceGUIWidgetLSMlists.sound,
         },
         hdr2 = {
           type = "header",
@@ -104,6 +126,7 @@ local options = {
           name = "Enabled",
           desc = "Enables/disables playing a sound when an objective has been completed",
         },
+        --[[
         objCompleteSound = {
           type = "select",
           style = "dropdown",
@@ -112,6 +135,17 @@ local options = {
           name = "Pick Sound",
           desc = "Pick Sound",
           values = {"AuctionWindowOpen","AuctionWindowClose"}
+        },
+        ]]
+        objCompleteSoundLSM = {
+          type = "select",
+          style = "dropdown",
+          order = 8,
+          width = "double",
+          name = "Pick Sound",
+          desc = "Pick Sound",
+          dialogControl = "LSM30_Sound",
+          values = AceGUIWidgetLSMlists.sound,
         },
         hdr3 = {
           type = "header",
@@ -125,6 +159,7 @@ local options = {
           name = "Enabled",
           desc = "Enables/disables playing a sound when a quest has been completed",
         },
+        --[[
         questCompleteSound = {
           type = "select",
           style = "dropdown",
@@ -133,6 +168,17 @@ local options = {
           name = "Pick Sound",
           desc = "Pick Sound",
           values = {"ReadyCheck","Sound\\Creature\\Peon\\PeonBuildingComplete1.ogg"}
+        },
+        ]]
+        questCompleteSoundLSM = {
+          type = "select",
+          style = "dropdown",
+          order = 11,
+          width = "double",
+          name = "Pick Sound",
+          desc = "Pick Sound",
+          dialogControl = "LSM30_Sound",
+          values = AceGUIWidgetLSMlists.sound,
         },
         hdr4 = {
           type = "header",
@@ -154,11 +200,14 @@ QuestNoise.Options = options
 local defaults = {
   profile =  {
     enableObjProgress = true,
-    objProgressSound = 1,
+    --objProgressSound = 1,
+    objProgressSoundLSM = "QN - AuctionWindowOpen",
     enableObjComplete = true,
-    objCompleteSound = 2,
+    --objCompleteSound = 2,
+    objCompleteSoundLSM = "QN - AuctionWindowClose",
     enableQuestComplete = true,
-    questCompleteSound = 2,
+    --questCompleteSound = 2,
+    questCompleteSoundLSM = "QN - Peon",
     enableQuestCompleteMsg = true,
   },
 }
@@ -169,6 +218,29 @@ local SoundKitIDLookup = {
   ["readycheck"] = SOUNDKIT.READY_CHECK
 }
 
+-- add sounds to LSM
+local function addToLSM()
+  for _, item in ipairs(media) do
+     LSM:Register(LSM.MediaType[item.type], "QN - "..item.name, item.filePath)
+  end
+end
+
+-- update config values to LSM
+local function updateToLSM()
+  if QuestNoise.db.profile.objProgressSound then
+    QuestNoise.db.profile.objProgressSoundLSM = ((QuestNoise.db.profile.objProgressSound == 2) and "QN - AuctionWindowClose") or "QN - AuctionWindowOpen"
+    QuestNoise.db.profile.objProgressSound = nil
+  end
+  if QuestNoise.db.profile.objCompleteSound then
+    QuestNoise.db.profile.objCompleteSoundLSM = ((QuestNoise.db.profile.objCompleteSound == 1) and "QN - AuctionWindowOpen") or "QN - AuctionWindowClose"
+    QuestNoise.db.profile.objCompleteSound = nil
+  end
+  if QuestNoise.db.profile.questCompleteSound then
+    QuestNoise.db.profile.questCompleteSoundLSM = ((QuestNoise.db.profile.questCompleteSound == 1) and "QN - ReadyCheck") or "QN - Peon"
+    QuestNoise.db.profile.questCompleteSound = nil
+  end
+end
+
 -- note this is the Ace3 addon frame, not the one we originally had
 -- eventually i'll merge them together but meh
 function QuestNoise:OnInitialize()
@@ -178,6 +250,11 @@ function QuestNoise:OnInitialize()
   options.args.Profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(QuestNoise.db)
   options.args.Profiles.cmdHidden = true
   options.args.Profiles.order = -1
+
+  -- add sound to LSM
+  addToLSM()
+  -- update old config to LSM
+  updateToLSM()
 
   LibStub("AceConfig-3.0"):RegisterOptionsTable("QuestNoise", options)
 
@@ -370,15 +447,15 @@ function f:MakeSound(event)
 
   if (event == QUESTNOISE_QUESTCOMPLETE) then
     if (QuestNoise.db.profile.enableQuestComplete) then
-      sound = QuestNoise.Options.args.General.args.questCompleteSound.values[QuestNoise.db.profile.questCompleteSound]
+      sound = LSM:Fetch("sound", QuestNoise.db.profile.questCompleteSoundLSM)
     end
   elseif (event == QUESTNOISE_OBJECTIVECOMPLETE) then
     if (QuestNoise.db.profile.enableObjComplete) then
-      sound = QuestNoise.Options.args.General.args.objCompleteSound.values[QuestNoise.db.profile.objCompleteSound]
+      sound = LSM:Fetch("sound", QuestNoise.db.profile.objCompleteSoundLSM)
     end
   elseif (event == QUESTNOISE_OBJECTIVEPROGRESS) then
     if (QuestNoise.db.profile.enableObjProgress) then
-      sound = QuestNoise.Options.args.General.args.objProgressSound.values[QuestNoise.db.profile.objProgressSound]
+      sound = LSM:Fetch("sound", QuestNoise.db.profile.objProgressSoundLSM)
     end
   end
 
@@ -386,18 +463,6 @@ function f:MakeSound(event)
     return
   end
 
-  sound = strlower(sound)
-
-  --fix .wav to .ogg
-  if (string.sub(sound, -4) == ".wav") then
-    sound = string.sub(sound, 1, -4) .. "ogg"
-  end
-
-  if ((string.sub(sound, -4) == ".mp3") or (string.sub(sound, -4) == ".ogg")) then
-    PlaySoundFile(sound, "Master")
-  else
-    PlaySound(SoundKitIDLookup[strlower(sound)], "Master")
-  end
-
+  PlaySoundFile(sound, "Master")
 
 end

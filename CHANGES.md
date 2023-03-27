@@ -1,3 +1,12 @@
+# v3.0.1 (27.3.2023)
+
+## New
+
+- Added LibSharedMedia-3.0 and updated code to use it
+
+## Update
+- Updated Ace3 libraries
+
 # v3.0.0 (27.3.2023)
 
 ## Update

@@ -1,8 +1,8 @@
-## Interface: 100700
-## Title: QuestNoise
+## Interface: 100007
+## Title: QuestNoise - continued
 ## Notes: Plays sounds upon making progress on quest objectives
 ## Author: cybermind, Cufea
-## Version: 3.0.0
+## Version: 3.0.1
 ## SavedVariables: QuestNoiseDB
 
 embeds.xml
