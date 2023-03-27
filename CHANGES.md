@@ -4,7 +4,8 @@
 
 - Fix for Dragonflight
 
-
+# *Original CHANGES.txt*
+```
 ------------------------------------------------------------------------
 r34 | cybermind@gmail.com | 2017-08-30 17:15:33 -0500 (Wed, 30 Aug 2017) | 1 line
 Changed paths:
@@ -13,4 +14,5 @@ Changed paths:
 
 now uses blizzard's soundkit ids, updated toc
 ------------------------------------------------------------------------
+```
 
