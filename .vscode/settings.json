@@ -1,0 +1,19 @@
+{
+    "Lua.diagnostics.globals": [
+        "UIErrorsFrame",
+        "SELECTED_CHAT_FRAME",
+        "DEFAULT_CHAT_FRAME",
+        "ACCEPT",
+        "CANCEL",
+        "GameTooltip",
+        "StaticPopupDialogs",
+        "StaticPopup_Show",
+        "InterfaceOptions_AddCategory",
+        "NORMAL_FONT_COLOR",
+        "GameFontHighlight",
+        "GameFontHighlightLarge",
+        "GameFontHighlightSmall",
+        "SlashCmdList",
+        "hash_SlashCmdList"
+    ]
+}
