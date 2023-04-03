@@ -1,7 +1,11 @@
+# v4.0.2 (3.4.2023)
+
+## Fix
+- Fix for extended text in objectives
+
 # v4.0.1 (27.3.2023)
 
 ## New
-
 - Added LibSharedMedia-3.0 and updated code to use it
 
 ## Update
@@ -10,7 +14,6 @@
 # v4.0.0 (27.3.2023)
 
 ## Update
-
 - Fix for Dragonflight
 
 # *Original CHANGES.txt*

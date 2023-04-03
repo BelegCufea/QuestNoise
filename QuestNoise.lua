@@ -411,7 +411,7 @@ function f:EvalMsg(arg)
         --print("qtext: " .. text)
 
         -- check if this objective matches what was displayed
-        if (text and (text == msg or text == msg2 or text == msg3)) then
+        if (text and (text == msg or text == msg2 or text == msg3 or text:match("^" .. msg2 .. " ") or text:match("^" .. msg3 .. " "))) then
 
           --print("match!")
 

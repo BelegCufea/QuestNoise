@@ -14,6 +14,19 @@
         "GameFontHighlightLarge",
         "GameFontHighlightSmall",
         "SlashCmdList",
-        "hash_SlashCmdList"
+        "hash_SlashCmdList",
+        "GameFontNormal",
+        "Settings",
+        "NORMAL_FONT_COLOR_CODE",
+        "FONT_COLOR_CODE_CLOSE",
+        "CLOSE",
+        "GameFontDisableSmall",
+        "GameFontNormalSmall",
+        "SetDesaturation",
+        "ColorPickerFrame",
+        "OpacitySliderFrame",
+        "ChatFontNormal",
+        "OKAY",
+        "NOT_BOUND"
     ]
 }
