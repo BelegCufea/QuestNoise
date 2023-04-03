@@ -230,7 +230,7 @@ local SoundKitIDLookup = {
 -- add sounds to LSM
 local function addToLSM()
   for _, item in ipairs(media) do
-     LSM:Register(LSM.MediaType[item.type], "QN - "..item.name, item.filePath)
+     LSM:Register(LSM.MediaType[item.type], "QN - "..item.name, tostring(item.filePath))
   end
 end
 
@@ -370,7 +370,7 @@ end
 function f:EvalMsg(arg)
   if not arg then return end
 
-  local msg, msg2, msg3 = arg
+  local msg, msg2, msg3 = arg, "REORDERED", "REORDERED_PLURAL"
 
   -- reorder arg for a second possible matching message
   -- new patch swapped quest leaderboard text around from:
@@ -397,46 +397,48 @@ function f:EvalMsg(arg)
   local numQuests = C_QuestLog.GetNumQuestLogEntries()
   for qindex = 1, numQuests do
     local qinfo = C_QuestLog.GetInfo(qindex)
-    local title, questid, isHeader = qinfo.title, qinfo.questID, qinfo.isHeader
-    local isComplete = C_QuestLog.IsComplete(questid)
+    if qinfo then
+      local title, questid, isHeader = qinfo.title, qinfo.questID, qinfo.isHeader
+      local isComplete = C_QuestLog.IsComplete(questid)
 
-    -- C_QuestLog.GetInfo returns EVERY line in the Quest Log, including the zone headers, and we don't care about them
-    if (not isHeader) then
+      -- C_QuestLog.GetInfo returns EVERY line in the Quest Log, including the zone headers, and we don't care about them
+      if (not isHeader) then
 
-      -- begin checking each of this quest's objectives
-      local oinfo = C_QuestLog.GetQuestObjectives(questid)
-      for i, q in pairs(oinfo) do
+        -- begin checking each of this quest's objectives
+        local oinfo = C_QuestLog.GetQuestObjectives(questid)
+        for i, q in pairs(oinfo) do
 
-        local text, finished = q.text, q.finished
-        --print("qtext: " .. text)
+          local text, finished = q.text, q.finished
+          --print("qtext: " .. text)
 
-        -- check if this objective matches what was displayed
-        if (text and (text == msg or text == msg2 or text == msg3 or text:match("^" .. msg2 .. " ") or text:match("^" .. msg3 .. " "))) then
+          -- check if this objective matches what was displayed
+          if (text and (text == msg or text == msg2 or text == msg3 or text:match("^" .. msg2 .. " ") or text:match("^" .. msg3 .. " "))) then
 
-          --print("match!")
+            --print("match!")
 
-          -- quest complete has higher priority
-          if (isComplete) then
-            if not event or event < QUESTNOISE_QUESTCOMPLETE then
-              event = QUESTNOISE_QUESTCOMPLETE
+            -- quest complete has higher priority
+            if (isComplete) then
+              if not event or event < QUESTNOISE_QUESTCOMPLETE then
+                event = QUESTNOISE_QUESTCOMPLETE
+              end
+              if (QuestNoise.db.profile.enableQuestCompleteMsg) then
+                UIErrorsFrame:AddMessage("Quest complete: "..title, 1, 1, 0, 1, 5);
+              end
+
+            -- then we see if the objective we just made progress on is complete
+            elseif (finished) then
+              if not event or event < QUESTNOISE_OBJECTIVECOMPLETE then
+                event = QUESTNOISE_OBJECTIVECOMPLETE
+              end
+
+            -- otherwise we just made some progress
+            else
+              if not event or event < QUESTNOISE_OBJECTIVEPROGRESS then
+                event = QUESTNOISE_OBJECTIVEPROGRESS
+              end
             end
-            if (QuestNoise.db.profile.enableQuestCompleteMsg) then
-              UIErrorsFrame:AddMessage("Quest complete: "..title, 1, 1, 0, 1, 5);
-            end
 
-          -- then we see if the objective we just made progress on is complete
-          elseif (finished) then
-            if not event or event < QUESTNOISE_OBJECTIVECOMPLETE then
-              event = QUESTNOISE_OBJECTIVECOMPLETE
-            end
-
-          -- otherwise we just made some progress
-          else
-            if not event or event < QUESTNOISE_OBJECTIVEPROGRESS then
-              event = QUESTNOISE_OBJECTIVEPROGRESS
-            end
           end
-
         end
       end
     end
