@@ -230,7 +230,7 @@ local SoundKitIDLookup = {
 -- add sounds to LSM
 local function addToLSM()
   for _, item in ipairs(media) do
-     LSM:Register(LSM.MediaType[item.type], "QN - "..item.name, tostring(item.filePath))
+     LSM:Register(LSM.MediaType[item.type], "QN - "..item.name, item.filePath)
   end
 end
 
@@ -293,7 +293,7 @@ local QuestNoise_ObjectivesBuffer = {}
 -- to previously-saved objectives in QUEST_LOG_UPDATE since it will only check if there has been recent info messages displayed,
 -- and it only checks for exact string matches of the displayed message.
 function f:UI_INFO_MESSAGE(messageType, message)
-	msgName = GetGameMessageInfo(messageType)
+	local msgName = GetGameMessageInfo(messageType)
 	--print(messageType.." "..msgName.." "..message)
 
  if msgName and msgName:sub(1, 10) == "ERR_QUEST_" and message ~= "Objective Complete." then
@@ -338,7 +338,7 @@ end
 
 function f:HandleBuffer()
   local text = QuestNoise_ObjectivesBuffer[#QuestNoise_ObjectivesBuffer]
-   local event = nil
+  local event = nil
   local tevent = nil
   while text do
     --print("processing: " .. text)
@@ -359,6 +359,7 @@ function f:HandleBuffer()
 
   -- finally, play sound if we have one to play
   if event then
+   --print("HandelBuffer eval'd sound")
     self:MakeSound(event)
   end
 end
@@ -414,7 +415,7 @@ function f:EvalMsg(arg)
           -- check if this objective matches what was displayed
           if (text and (text == msg or text == msg2 or text == msg3 or text:match("^" .. msg2 .. " ") or text:match("^" .. msg3 .. " "))) then
 
-            --print("match!")
+            --print("match!", text, msg, msg2, msg3, isComplete, finished, event)
 
             -- quest complete has higher priority
             if (isComplete) then
@@ -449,6 +450,7 @@ end
 
 -- This is just a helper function to play sounds based on a specific event constant
 function f:MakeSound(event)
+  --print("MakeSound", event)
   local sound = nil
 
   if (event == QUESTNOISE_QUESTCOMPLETE) then
