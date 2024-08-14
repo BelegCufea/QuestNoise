@@ -1,4 +1,7 @@
-# v4.0.2 (3.4.2023)
+# v4.0.3 (14.8.2024)
+
+## Fix
+- Fix for 11.0.2
 
 ## Fix
 - Fix for extended text in objectives

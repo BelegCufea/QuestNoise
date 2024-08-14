@@ -53,7 +53,7 @@
 
 -- our Ace3 addon
 QuestNoise = LibStub("AceAddon-3.0"):NewAddon("QuestNoise", "AceConsole-3.0")
-QuestNoise.version = GetAddOnMetadata("QuestNoise", "Version")
+QuestNoise.version = C_AddOns.GetAddOnMetadata("QuestNoise", "Version")
 QuestNoise.date = "2017-08-30"
 
 -- libSharedMedia integration
