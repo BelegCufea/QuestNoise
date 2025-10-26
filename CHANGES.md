@@ -1,3 +1,8 @@
+# v4.0.4 (26.10.2025)
+
+## New
+- Embed into ElvUI WindTools QuestProgress module
+
 # v4.0.3 (14.8.2024)
 
 ## Fix

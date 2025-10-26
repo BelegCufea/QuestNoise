@@ -1,9 +1,10 @@
-## Interface: 110002
+## Interface: 110205
 ## Title: QuestNoise - continued
 ## Notes: Plays sounds upon making progress on quest objectives
 ## Author: cybermind, Cufea
-## Version: 4.0.3
+## Version: 4.0.4
 ## SavedVariables: QuestNoiseDB
+## OptionalDeps: ElvUI_WindTools
 
 embeds.xml
 QuestNoise.lua

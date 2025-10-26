@@ -474,3 +474,70 @@ function f:MakeSound(event)
   PlaySoundFile(sound, "Master")
 
 end
+
+-- Hook into ElvUI WindTools' QuestProgress module to add our sound-playing functionality
+local WindToolsReference = WindTools
+
+local function HookQuestProgress()
+
+    -- Perform deep safety checks before attempting to access or call
+    -- any methods on the module.
+    if WindToolsReference
+        and WindToolsReference[1]
+        and WindToolsReference[1].modules
+        and WindToolsReference[1].modules.QuestProgress
+    then
+
+        local QP = WindToolsReference[1].modules.QuestProgress
+
+        -- Check if the module exists
+        if QP.HandleQuestProgress then
+
+            -- Store a reference to the original function
+            local Original_HandleQuestProgress = QP.HandleQuestProgress
+
+            -- Replace the module's method with our custom wrapper function
+            QP.HandleQuestProgress = function(self, status, questData, objectiveData)
+                local sound = nil
+                if status == "accepted" then
+                    -- Quest accepted (no sound)
+                    sound = nil
+                elseif status == "complete" then
+                    -- Quest completed and ready to turn in
+                    if (QuestNoise.db.profile.enableQuestComplete) then
+                      sound = LSM:Fetch("sound", QuestNoise.db.profile.questCompleteSoundLSM)
+                    end
+                elseif status == "quest_update" or status == "scenario_update" then
+                    -- Objective progress update
+                    -- Check objectiveData existence before using its properties
+                    if objectiveData then
+                        if objectiveData.numFulfilled == objectiveData.numRequired then
+                            -- Objective completed
+                          if (QuestNoise.db.profile.enableObjComplete) then
+                            sound = LSM:Fetch("sound", QuestNoise.db.profile.objCompleteSoundLSM)
+                          end
+                        else
+                            -- Objective progress (e.g., 1/10 to 2/10)
+                          if (QuestNoise.db.profile.enableObjProgress) then
+                            sound = LSM:Fetch("sound", QuestNoise.db.profile.objProgressSoundLSM)
+                          end
+                        end
+                    end
+                end
+
+                -- Play the sound if a specific ID was determined
+                if sound then
+                    PlaySoundFile(sound, "Master")
+                end
+
+                -- Call the original function to ensure the addon's normal behavior continues.
+                -- Crucial: Pass 'self' as the first argument to maintain the correct object context.
+                return Original_HandleQuestProgress(self, status, questData, objectiveData)
+            end
+        end
+    end
+end
+
+-- Hooking logic is executed immediately when the file loads, relying on the
+-- 'Dependencies' field in the .toc file to load WindTools first.
+HookQuestProgress()
