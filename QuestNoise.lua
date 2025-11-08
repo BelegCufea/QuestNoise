@@ -489,6 +489,14 @@ local function HookQuestProgress()
     then
 
         local QP = WindToolsReference[1].modules.QuestProgress
+        ---@class QuestStatusType : number
+        ---@type table<string, QuestStatusType>
+        local QUEST_STATUS = {
+          ACCEPTED = 1,
+          COMPLETED = 2,
+          QUEST_UPDATE = 3,
+          SCENARIO_UPDATE = 4,
+        }
 
         -- Check if the module exists
         if QP.HandleQuestProgress then
@@ -499,15 +507,15 @@ local function HookQuestProgress()
             -- Replace the module's method with our custom wrapper function
             QP.HandleQuestProgress = function(self, status, questData, objectiveData)
                 local sound = nil
-                if status == "accepted" then
+                if status == QUEST_STATUS.ACCEPTED then
                     -- Quest accepted (no sound)
                     sound = nil
-                elseif status == "complete" then
+                elseif status == QUEST_STATUS.COMPLETED then
                     -- Quest completed and ready to turn in
                     if (QuestNoise.db.profile.enableQuestComplete) then
                       sound = LSM:Fetch("sound", QuestNoise.db.profile.questCompleteSoundLSM)
                     end
-                elseif status == "quest_update" or status == "scenario_update" then
+                elseif status == QUEST_STATUS.QUEST_UPDATE or status == QUEST_STATUS.SCENARIO_UPDATE then
                     -- Objective progress update
                     -- Check objectiveData existence before using its properties
                     if objectiveData then
